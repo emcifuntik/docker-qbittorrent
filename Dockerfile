@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 
-ARG QBITTORRENT_VERSION=4.6.4
+ARG QBITTORRENT_BRANCH_CHECKOUT=master
 ARG LIBTORRENT_VERSION=2.0.10
 ARG XX_VERSION=1.3.0
-ARG ALPINE_VERSION=3.18
+ARG ALPINE_VERSION=3.20
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS base
@@ -16,9 +16,9 @@ WORKDIR /src
 RUN git clone --branch v${LIBTORRENT_VERSION} --recurse-submodules https://github.com/arvidn/libtorrent.git .
 
 FROM base AS qbittorrent-src
-ARG QBITTORRENT_VERSION
+ARG QBITTORRENT_BRANCH_CHECKOUT
 WORKDIR /src
-RUN git clone --branch release-${QBITTORRENT_VERSION} --shallow-submodules --recurse-submodules https://github.com/qbittorrent/qBittorrent.git .
+RUN git clone --branch ${QBITTORRENT_BRANCH_CHECKOUT} --shallow-submodules --recurse-submodules https://github.com/qbittorrent/qBittorrent.git .
 
 FROM base AS build
 RUN apk --update --no-cache add binutils clang cmake libtool linux-headers ninja perl pkgconf tree
@@ -81,6 +81,9 @@ ENV QBITTORRENT_HOME="/home/qbittorrent" \
   PGID="1500" \
   WEBUI_PORT="8080"
 
+COPY vuetorrent.zip /tmp/vuetorrent.zip
+RUN mkdir /data && mkdir /data/webui && unzip -d /data/webui /tmp/vuetorrent.zip \
+  && rm -f /tmp/vuetorrent.zip
 COPY entrypoint.sh /entrypoint.sh
 
 RUN chmod a+x /entrypoint.sh \
